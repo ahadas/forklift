@@ -723,24 +723,24 @@ func (r *KubeVirt) dataVolumes(vm *plan.VMStatus, secret *core.Secret, configMap
 		return
 	}
 
-        annotations := make(map[string]string)
-        if !r.Plan.Spec.Warm || Settings.RetainPrecopyImporterPods {
-            annotations[AnnRetainAfterCompletion] = "true"
-        }
-        if r.Plan.Spec.TransferNetwork != nil {
-            annotations[AnnDefaultNetwork] = path.Join(
-                r.Plan.Spec.TransferNetwork.Namespace, r.Plan.Spec.TransferNetwork.Name)
-        }
-        // Do not delete the DV when the import completes as we check the DV to get the current
-        // disk transfer status.
-        annotations[AnnDeleteAfterCompletion] = "false"
-        dvTemplate := cdi.DataVolume{
-            ObjectMeta: meta.ObjectMeta{
-                Namespace:   r.Plan.Spec.TargetNamespace,
-                Annotations: annotations,
-                GenerateName: r.getGeneratedName(vm),
-            },
-        }
+	annotations := r.vmLabels(vm.Ref)
+	if !r.Plan.Spec.Warm || Settings.RetainPrecopyImporterPods {
+		annotations[AnnRetainAfterCompletion] = "true"
+	}
+	if r.Plan.Spec.TransferNetwork != nil {
+		annotations[AnnDefaultNetwork] = path.Join(
+			r.Plan.Spec.TransferNetwork.Namespace, r.Plan.Spec.TransferNetwork.Name)
+	}
+	// Do not delete the DV when the import completes as we check the DV to get the current
+	// disk transfer status.
+	annotations[AnnDeleteAfterCompletion] = "false"
+	dvTemplate := cdi.DataVolume{
+		ObjectMeta: meta.ObjectMeta{
+			Namespace:    r.Plan.Spec.TargetNamespace,
+			Annotations:  annotations,
+			GenerateName: r.getGeneratedName(vm),
+		},
+	}
 	dvTemplate.Labels = r.vmLabels(vm.Ref)
 
 	dataVolumes, err = r.Builder.DataVolumes(vm.Ref, secret, configMap, &dvTemplate)
