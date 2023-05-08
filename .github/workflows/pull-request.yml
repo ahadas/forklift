@@ -40,7 +40,7 @@ jobs:
 
       - name: Build and setup everything with bazel
         id: forkliftci
-        uses: ${{ ARIK }}
+        uses: "${{ ARIK }}"
         with:
           gh_access_token: ${{ secrets.GITHUB_TOKEN }}
           provider_name: ${{ matrix.source_provider }}
