@@ -42,19 +42,14 @@ spec:
           value: "v1"
         - name: VIRT_V2V_IMAGE
           value: {{ virt_v2v_image_fqin }}|{{ virt_v2v_warm_image_fqin }}
-{% if inventory_tls_enabled|bool %}
         - name: API_PORT
           value: "8443"
         - name: API_TLS_ENABLED
           value: "true"
-{% else %}
-        - name: API_PORT
-          value: "8080"
-        - name: API_TLS_ENABLED
-          value: "false"
-{% endif %}
         - name: METRICS_PORT
           value: '8081'
+        - name: API_TLS_CA
+          value: /var/run/secrets/{{ inventory_tls_secret_name }}/ca.crt
         - name: SECRET_NAME
           value: webhook-server-secret
 {% if controller_log_level is defined and controller_log_level is number %}
@@ -119,6 +114,8 @@ spec:
           readOnly: true
         - mountPath: {{ profiler_volume_path }}
           name: profiler
+        - mountPath: /var/run/secrets/{{ inventory_tls_secret_name }}
+          name: {{ inventory_service_name }}-serving-cert
       - name: inventory
         command:
         - /usr/local/bin/forklift-controller
@@ -133,7 +130,6 @@ spec:
           value: "v1"
         - name: AUTH_REQUIRED
           value: '{{ feature_auth_required|lower }}'
-{% if inventory_tls_enabled|bool %}
         - name: API_PORT
           value: "8443"
         - name: API_TLS_ENABLED
@@ -142,12 +138,6 @@ spec:
           value: "/var/run/secrets/{{ inventory_tls_secret_name }}/tls.crt"
         - name: API_TLS_KEY
           value: /var/run/secrets/{{ inventory_tls_secret_name }}/tls.key
-{% else %}
-        - name: API_PORT
-          value: "8080"
-        - name: API_TLS_ENABLED
-          value: "false"
-{% endif %}
         - name: METRICS_PORT
           value: '8082'
         - name: SECRET_NAME
@@ -186,15 +176,9 @@ spec:
         image: {{ controller_image_fqin }}
         imagePullPolicy: {{ image_pull_policy }}
         ports:
-{% if inventory_tls_enabled|bool %}
         - name: api
           containerPort: 8443
           protocol: TCP
-{% else %}
-        - name: api
-          containerPort: 8080
-          protocol: TCP
-{% endif %}
         resources:
           limits:
             cpu: {{ inventory_container_limits_cpu }}
@@ -207,22 +191,18 @@ spec:
           name: inventory
         - mountPath: {{ profiler_volume_path }}
           name: profiler
-{% if inventory_tls_enabled|bool %}
         - mountPath: /var/run/secrets/{{ inventory_tls_secret_name }}
           name: {{ inventory_service_name }}-serving-cert
-{% endif %}
       terminationGracePeriodSeconds: 10
       volumes:
       - name: cert
         secret:
           defaultMode: 420
           secretName: webhook-server-secret
-{% if inventory_tls_enabled|bool %}
       - name: {{ inventory_tls_secret_name }}
         secret:
           defaultMode: 420
           secretName: {{ inventory_tls_secret_name }}
-{% endif %}
       - name: inventory
         emptyDir: {}
       - name: profiler

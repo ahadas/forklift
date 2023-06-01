@@ -103,6 +103,12 @@
       definition: "{{ lookup('template', 'api/ca.yml.j2') }}"
     when: k8s_cluster|bool
 
+  - name: "Configure inventory certificate on K8s"
+    k8s:
+      state: present
+      definition: "{{ lookup('template', 'controller/ca.yml.j2') }}"
+    when: k8s_cluster|bool
+
   - name: "Setup api service"
     k8s:
       state: present
