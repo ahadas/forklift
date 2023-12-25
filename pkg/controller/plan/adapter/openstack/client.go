@@ -772,14 +772,13 @@ func (r *Client) ensureImagesFromVolumesReady(vm *libclient.VM) (ready bool, err
 			"vm", vm.Name)
 		return
 	}
-	ready = true
 	for _, image := range imagesFromVolumes {
-		ready, err = r.ensureImageFromVolumeReady(vm, &image)
-		if err != nil {
-			err = liberr.Wrap(err)
+		imageReady, imageReadyErr := r.ensureImageFromVolumeReady(vm, &image)
+		if imageReadyErr != nil {
+			err = liberr.Wrap(imageReadyErr)
 			return
 		}
-		if !ready {
+		if !imageReady {
 			continue
 		}
 		originalVolumeID := image.Properties[forkliftPropertyOriginalVolumeID].(string)
@@ -790,13 +789,12 @@ func (r *Client) ensureImagesFromVolumesReady(vm *libclient.VM) (ready bool, err
 			return
 		}
 	}
-	if len(vm.AttachedVolumes) != len(imagesFromVolumes) {
+	if len(vm.AttachedVolumes) == len(imagesFromVolumes) {
+		ready = true
+		r.Log.Info("all steps finished!", "vm", vm.Name)
+	} else {
 		r.Log.Info("not all the images have been created",
 			"vm", vm.Name, "attachedVolumes", vm.AttachedVolumes, "imagesFromVolumes", imagesFromVolumes)
-		ready = false
-	}
-	if ready {
-		r.Log.Info("all steps finished!", "vm", vm.Name)
 	}
 	return
 }
