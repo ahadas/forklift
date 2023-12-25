@@ -831,8 +831,7 @@ func (r *Client) ensureImageFromVolumeReady(vm *libclient.VM, image *libclient.I
 
 func (r *Client) ensureImageUpToDate(vm *libclient.VM, image *libclient.Image) (upToDate bool, err error) {
 	inventoryImage := &model.Image{}
-	err = r.Context.Source.Inventory.Find(inventoryImage, ref.Ref{ID: image.ID})
-	if err != nil {
+	if err = r.Context.Source.Inventory.Find(inventoryImage, ref.Ref{ID: image.ID}); err != nil {
 		if errors.As(err, &model.NotFoundError{}) {
 			err = nil
 			r.Log.Info("the image does not exist in the inventory, waiting...",
@@ -840,11 +839,9 @@ func (r *Client) ensureImageUpToDate(vm *libclient.VM, image *libclient.Image) (
 		}
 		return
 	}
-	upToDate = true
-	if _, ok := inventoryImage.Properties[forkliftPropertyOriginalVolumeID]; !ok {
+	if _, upToDate = inventoryImage.Properties[forkliftPropertyOriginalVolumeID]; !upToDate {
 		r.Log.Info("image properties have not been synchronized, waiting...",
 			"vm", vm.Name, "image", inventoryImage.Name, "properties", inventoryImage.Properties)
-		upToDate = false
 	}
 	return
 
@@ -878,8 +875,7 @@ func (r *Client) ensureSnapshotsFromVolumes(vm *libclient.VM) (err error) {
 }
 
 func (r *Client) ensureVolumeFromSnapshot(vm *libclient.VM, snapshot *libclient.Snapshot) (err error) {
-	_, err = r.getVolumeFromSnapshot(vm, snapshot.ID)
-	if err != nil {
+	if _, err = r.getVolumeFromSnapshot(vm, snapshot.ID); err != nil {
 		if !errors.Is(err, ResourceNotFoundError) {
 			err = liberr.Wrap(err)
 			r.Log.Error(err, "trying to get the snapshot info from the volume  VM snapshot",
@@ -915,8 +911,7 @@ func (r *Client) ensureVolumeFromSnapshot(vm *libclient.VM, snapshot *libclient.
 }
 
 func (r *Client) ensureVolumesFromSnapshots(vm *libclient.VM) (err error) {
-	var volumesFromSnapshots []libclient.Volume
-	volumesFromSnapshots, err = r.getVolumesFromSnapshots(vm)
+	volumesFromSnapshots, err := r.getVolumesFromSnapshots(vm)
 	if err != nil {
 		err = liberr.Wrap(err)
 		return
@@ -945,8 +940,7 @@ func (r *Client) ensureVolumesFromSnapshots(vm *libclient.VM) (err error) {
 }
 
 func (r *Client) ensureImageFromVolume(vm *libclient.VM, volume *libclient.Volume) (err error) {
-	_, err = r.getImageFromVolume(vm, volume.ID)
-	if err != nil {
+	if _, err = r.getImageFromVolume(vm, volume.ID); err != nil {
 		if !errors.Is(err, ResourceNotFoundError) {
 			err = liberr.Wrap(err)
 			r.Log.Error(err, "while trying to get the image from the volume",
