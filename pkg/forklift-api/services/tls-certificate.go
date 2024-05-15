@@ -12,7 +12,8 @@ import (
 )
 
 func serveTlsCertificate(resp http.ResponseWriter, req *http.Request, client client.Client) {
-	if url, err := url.Parse(req.URL.Query().Get("URL")); err == nil {
+	input := url.QueryEscape(req.URL.Query().Get("URL"))
+	if url, err := url.Parse(input); err == nil {
 		log.Info("received a request to retrieve certificate", "URL", url)
 		secret := &core.Secret{
 			Data: map[string][]byte{"insecureSkipVerify": []byte("true")},
@@ -23,6 +24,7 @@ func serveTlsCertificate(resp http.ResponseWriter, req *http.Request, client cli
 				Bytes: cacert.Raw,
 			})
 			if _, err := resp.Write(encoded); err == nil {
+				resp.Header().Add("Content-Type", "text/plain")
 				resp.WriteHeader(http.StatusOK)
 			} else {
 				msg := fmt.Sprintf("failed to write certificate: %s", string(encoded))
